@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  firstName     String
+  lastName      String
+  password      String
+  dateRegistred DateTime  @default(now())
+  lastLogin     DateTime?
+  isVerified    Boolean   @default(false)
+  token         String?
+  refreshToken  String?
+  roles         Roles[]
+  Doctor        Doctor[]
+  Patient       Patient[]
+}
+
+model Doctor {
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id])
+  userId     Int
+  proffesion String
+  education  String
+  about      String?
+  patients   Patient[]
+  Visit      Visit[]
+}
+
+model Patient {
+  id      Int      @id @default(autoincrement())
+  user    User     @relation(fields: [userId], references: [id])
+  userId  Int
+  age     Int
+  pesel   String
+  address String
+  phone   String
+  doctors Doctor[]
+  Visit   Visit[]
+}
+
+model Visit {
+  id        Int          @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  doctor    Doctor       @relation(fields: [doctorId], references: [id])
+  doctorId  Int
+  patient   Patient      @relation(fields: [patientId], references: [id])
+  patientId Int
+  type      VisitType
+  subType   VisitSubType
+  createdAt DateTime     @default(now())
+}
+
+enum Roles {
+  ADMIN
+  PATIENT
+  DOCTOR
+}
+
+enum VisitType {
+  ONLINE
+  STATIONARY
+}
+
+enum VisitSubType {
+  FIRST
+  FOLLOW_UP
+  CONTROL
+}
