@@ -7,18 +7,25 @@ import { DoctorsService } from '../../doctors/doctors.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ResetPasswordRequestDto } from '../requests/reset-password-request.dto';
 import { ResetPasswordDto } from '../requests/reset-password.dto';
+import { TokenResponseDto } from '../response';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private doctorsService: DoctorsService,
+    private readonly usersService: UsersService,
+    private readonly doctorsService: DoctorsService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailerService,
   ) {}
 
   async signUp(signUpDto: SignUpDto): Promise<{ status: HttpStatus }> {
     const { email, password, lastName, firstName } = signUpDto;
+
+    const userExists = await this.usersService.getUser({ email });
+
+    if (userExists) {
+      throw new UnauthorizedException('User already exists');
+    }
 
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltOrRounds);
@@ -49,6 +56,12 @@ export class AuthService {
   ): Promise<{ status: HttpStatus }> {
     const { email, password, lastName, firstName, education, proffesion } =
       signUpDto;
+
+    const userExists = await this.usersService.getUser({ email });
+
+    if (userExists) {
+      throw new UnauthorizedException('User already exists');
+    }
 
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltOrRounds);
@@ -88,7 +101,6 @@ export class AuthService {
       data: { isVerified: true },
     });
 
-    console.log(userId);
     return {
       status: HttpStatus.OK,
     };
@@ -131,7 +143,7 @@ export class AuthService {
     };
   }
 
-  async signIn(loginDto: LoginDto): Promise<{ access_token: string }> {
+  async signIn(loginDto: LoginDto): Promise<TokenResponseDto> {
     const { email, password } = loginDto;
     const user = await this.usersService.getUser({ email });
 
@@ -145,10 +157,52 @@ export class AuthService {
     }
 
     const payload = { email: user.email, sub: user.id };
-    const access_token = await this.jwtService.signAsync(payload);
-    console.log(access_token);
-    return {
-      access_token,
+    const accessToken = await this.jwtService.signAsync(payload);
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
+
+    await this.usersService.updateUser({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
+
+    const tokenResponse: TokenResponseDto = {
+      accessToken,
+      refreshToken,
     };
+    return tokenResponse;
+  }
+
+  async logout(userId: number): Promise<{ status: HttpStatus }> {
+    await this.usersService.updateUser({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+
+    return {
+      status: HttpStatus.OK,
+    };
+  }
+
+  // async refresh(payload): Promise<TokenResponseDto> {
+  //
+  // }
+
+  async validateUser(dto: LoginDto): Promise<any> {
+    const { email, password } = dto;
+    const user = await this.usersService.getUser({ email });
+
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordMatching = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatching) {
+      return null;
+    }
+
+    return user;
   }
 }

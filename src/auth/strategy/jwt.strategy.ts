@@ -1,26 +1,51 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { UsersService } from '../users/users.service';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { JwtService } from '@nestjs/jwt';
+
+type JwtPayload = {
+  sub: string;
+  email: string;
+};
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly userService: UsersService) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: 'myjwtsecret',
+      ignoreExpiration: false,
+      secretOrKey: process.env.JWT_SECRET,
     });
   }
 
-  async validate(payload) {
-    const { id } = payload;
+  async validate(payload: JwtPayload) {
+    return payload;
+  }
+}
 
-    const user = await this.userService.getUser({ id });
+@Injectable()
+export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
+  constructor(private readonly jwtService: JwtService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      passReqToCallback: true,
+      secretOrKey: process.env.JWT_SECRET,
+    });
+  }
 
-    if (!user) {
-      throw new UnauthorizedException('Login first to access this resource');
+  async validate(request, payload: JwtPayload) {
+    const refreshToken = request
+      .get('authorization')
+      .replace('Bearer', '')
+      .trim();
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Invalid token');
     }
 
-    return user;
+    return {
+      refreshToken,
+      ...payload,
+    };
   }
 }

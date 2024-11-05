@@ -10,11 +10,11 @@ import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AuthModule,
     UsersModule,
     DoctorsModule,
     PatientsModule,
-    ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
     MailerModule.forRoot({
       transport: {
         host: process.env.EMAIL_HOST,

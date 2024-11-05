@@ -1,16 +1,37 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from '../service/auth.service';
 import { DoctorSignUpDto, LoginDto, SignUpDto } from '../requests';
 import { ResetPasswordRequestDto } from '../requests/reset-password-request.dto';
 import { ResetPasswordDto } from '../requests/reset-password.dto';
+import { TokenResponseDto } from '../response';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 @Controller('api/auth')
+@ApiTags('api/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('/sign-up')
   signUp(@Body() signUpDto: SignUpDto) {
     return this.authService.signUp(signUpDto);
+  }
+
+  @Post('/sign-in')
+  @ApiOkResponse({ type: TokenResponseDto })
+  signIn(@Body() loginDto: LoginDto): Promise<TokenResponseDto> {
+    return this.authService.signIn(loginDto);
   }
 
   @Post('/doctor-sign-up')
@@ -33,8 +54,18 @@ export class AuthController {
     return this.authService.resetPassword(dto, id);
   }
 
-  @Post('/sign-in')
-  signIn(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
-    return this.authService.signIn(loginDto);
+  @UseGuards(JwtAuthGuard)
+  @Post('/logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@Req() req) {
+    const { user } = req;
+    return this.authService.logout(user.sub);
+  }
+
+  @UseGuards(AuthGuard('refresh'))
+  @Post('/refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@Req() req) {
+    // return this.authService.refresh(req.user);
   }
 }
