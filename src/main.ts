@@ -7,7 +7,10 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
   const config = new DocumentBuilder()
     .setTitle('Dyplom API')
     .setDescription('API for Dyplom project')

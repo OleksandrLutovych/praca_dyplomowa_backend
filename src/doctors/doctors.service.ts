@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Doctor, Prisma } from '@prisma/client';
 import { DoctorsRepository } from './doctors.repository';
+import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
+import { PaginateOutput } from 'src/common/paginator';
 
 @Injectable()
 export class DoctorsService {
@@ -10,14 +12,10 @@ export class DoctorsService {
     return this.doctorRepository.findOne(params);
   }
 
-  async getMany(): Promise<Doctor[]> {
-    return this.doctorRepository.findMany({
-      where: {
-        user: {
-          isVerified: true,
-        },
-      },
-    });
+  async getMany(query?: QueryPaginationDto): Promise<PaginateOutput<Doctor>> {
+    const doctors = await this.doctorRepository.findMany(query);
+
+    return doctors;
   }
 
   async create(data: Prisma.DoctorCreateInput): Promise<Doctor> {
