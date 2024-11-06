@@ -11,6 +11,8 @@ import { GoogleStrategy } from './strategy/google.strategy';
 import { LocalStrategy } from './strategy/local.strategy';
 import { UsersModule } from './users/users.module';
 import { UsersRepository } from './users/users.repository';
+import { DoctorsRepository } from 'src/doctors/doctors.repository';
+import { DoctorsService } from 'src/doctors/doctors.service';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { UsersRepository } from './users/users.repository';
     LocalStrategy,
     UsersService,
     UsersRepository,
+    DoctorsService,
+    DoctorsRepository,
     GoogleStrategy,
     JwtStrategy,
     RefreshStrategy,

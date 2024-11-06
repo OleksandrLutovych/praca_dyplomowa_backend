@@ -1,40 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma';
 import { Doctor, Prisma } from '@prisma/client';
+import { DoctorsRepository } from './doctors.repository';
 
 @Injectable()
 export class DoctorsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly doctorRepository: DoctorsRepository) {}
 
-  async get(
-    doctorWhereUniqueInput: Prisma.DoctorWhereUniqueInput,
-  ): Promise<Doctor | null> {
-    return this.prisma.doctor.findUnique({
-      where: doctorWhereUniqueInput,
-    });
+  async get(params: Prisma.DoctorWhereUniqueInput): Promise<Doctor | null> {
+    return this.doctorRepository.findOne(params);
   }
 
-  async getAll(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.DoctorWhereUniqueInput;
-    where?: Prisma.DoctorWhereInput;
-    orderBy?: Prisma.DoctorOrderByWithRelationInput;
-  }): Promise<Doctor[]> {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.doctor.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
+  async getMany(): Promise<Doctor[]> {
+    return this.doctorRepository.findMany({
+      where: {
+        user: {
+          isVerified: true,
+        },
+      },
     });
   }
 
   async create(data: Prisma.DoctorCreateInput): Promise<Doctor> {
-    return this.prisma.doctor.create({
-      data,
-    });
+    return this.doctorRepository.create(data);
   }
 
   async update(params: {
@@ -42,15 +29,10 @@ export class DoctorsService {
     data: Prisma.DoctorUpdateInput;
   }): Promise<Doctor> {
     const { where, data } = params;
-    return this.prisma.doctor.update({
-      data,
-      where,
-    });
+    return this.doctorRepository.update({ where, data });
   }
 
-  async delete(where: Prisma.DoctorWhereUniqueInput): Promise<Doctor> {
-    return this.prisma.doctor.delete({
-      where,
-    });
+  async delete(id: Prisma.DoctorWhereUniqueInput): Promise<Doctor> {
+    return this.doctorRepository.delete(id);
   }
 }
