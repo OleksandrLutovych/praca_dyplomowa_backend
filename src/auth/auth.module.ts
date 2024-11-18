@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { UsersRepository } from './users/users.repository';
 import { DoctorsRepository } from 'src/doctors/doctors.repository';
 import { DoctorsService } from 'src/doctors/doctors.service';
+import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { DoctorsService } from 'src/doctors/doctors.service';
     UsersRepository,
     DoctorsService,
     DoctorsRepository,
+    DoctorServiceRepository,
     GoogleStrategy,
     JwtStrategy,
     RefreshStrategy,

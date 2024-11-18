@@ -27,17 +27,37 @@ model User {
   roles         Roles[]
   Doctor        Doctor[]
   Patient       Patient[]
+  Contact       Contact[]
 }
 
 model Doctor {
-  id         Int       @id @default(autoincrement())
-  user       User      @relation(fields: [userId], references: [id])
-  userId     Int
-  proffesion String
-  education  String
-  about      String?
-  patients   Patient[]
-  Visit      Visit[]
+  id            Int             @id @default(autoincrement())
+  user          User            @relation(fields: [userId], references: [id])
+  userId        Int
+  proffesion    String
+  education     String
+  about         String?
+  rating        Float?
+  patients      Patient[]
+  Visit         Visit[]
+  DoctorService DoctorService[]
+}
+
+model Contact {
+  id     Int         @id @default(autoincrement())
+  user   User        @relation(fields: [userId], references: [id])
+  userId Int
+  type   ContactType
+  value  String
+}
+
+model DoctorService {
+  id            Int     @id @default(autoincrement())
+  doctor        Doctor  @relation(fields: [doctorId], references: [id])
+  doctorId      Int
+  service       String
+  price         Float
+  recomendation String?
 }
 
 model Patient {
@@ -60,9 +80,15 @@ model Visit {
   doctorId  Int
   patient   Patient      @relation(fields: [patientId], references: [id])
   patientId Int
+  place     String
   type      VisitType
   subType   VisitSubType
   createdAt DateTime     @default(now())
+}
+
+enum ContactType {
+  EMAIL
+  PHONE
 }
 
 enum Roles {

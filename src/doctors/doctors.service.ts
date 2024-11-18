@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { Doctor, Prisma } from '@prisma/client';
+import { Doctor, DoctorService, Prisma } from '@prisma/client';
 import { DoctorsRepository } from './doctors.repository';
 import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
 import { PaginateOutput } from 'src/common/paginator';
+import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
 
 @Injectable()
 export class DoctorsService {
-  constructor(private readonly doctorRepository: DoctorsRepository) {}
+  constructor(
+    private readonly doctorRepository: DoctorsRepository,
+    private readonly doctorServiceRepository: DoctorServiceRepository,
+  ) {}
 
   async get(params: Prisma.DoctorWhereUniqueInput): Promise<Doctor | null> {
     return this.doctorRepository.findOne(params);
@@ -16,6 +20,14 @@ export class DoctorsService {
     const doctors = await this.doctorRepository.findMany(query);
 
     return doctors;
+  }
+
+  async getServices(doctorId: number): Promise<DoctorService[]> {
+    const services = await this.doctorServiceRepository.findMany({
+      doctorId,
+    });
+
+    return services;
   }
 
   async create(data: Prisma.DoctorCreateInput): Promise<Doctor> {

@@ -8,9 +8,32 @@ import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
 export class DoctorsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findOne(where: Prisma.DoctorWhereUniqueInput): Promise<Doctor | null> {
+  async findOne(
+    where: Prisma.DoctorWhereUniqueInput,
+  ): Promise<
+    (Doctor & { user: { firstName: string; lastName: string } }) | null
+  > {
     return this.prisma.doctor.findUnique({
       where,
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+  }
+  async findByUserId(
+    userId: number,
+  ): Promise<
+    (Doctor & { user: { firstName: string; lastName: string } }) | null
+  > {
+    return this.prisma.doctor.findFirst({
+      where: {
+        userId,
+      },
       include: {
         user: {
           select: {
