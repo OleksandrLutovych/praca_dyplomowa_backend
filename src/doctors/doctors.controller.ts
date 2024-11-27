@@ -13,7 +13,7 @@ import { DoctorsService } from './doctors.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
 import { PaginateOutput } from 'src/common/paginator';
-import { Doctor, DoctorService } from '@prisma/client';
+import { Doctor, DoctorService, Visit } from '@prisma/client';
 import { CreateVisitDto } from 'src/visits/dtos/create-visit.dto';
 import { VisitsService } from 'src/visits/visits.service';
 
@@ -47,9 +47,15 @@ export class DoctorsController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/visits')
   @ApiOkResponse()
-  create(@Body() data: CreateVisitDto, @Param() params, @Request() req) {
+  create(
+    @Body() data: CreateVisitDto,
+    @Param() params,
+    @Request() req,
+  ): Promise<Visit> {
     const { id } = params;
     const patientId = req.user.sub;
-    return this.visitService.create(data, id, patientId);
+
+    console.log(id, patientId);
+    return this.doctorService.createVisit(data, Number(id), Number(patientId));
   }
 }

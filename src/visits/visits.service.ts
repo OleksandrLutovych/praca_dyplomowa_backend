@@ -19,28 +19,28 @@ export class VisitsService {
     return doctors;
   }
 
-  async create(
-    data: CreateVisitDto,
-    doctorId: number,
-    patientId: number,
-  ): Promise<Visit> {
-    console.log(data, doctorId, patientId);
-    return this.visitsRepository.create({
-      startDate: data.date,
-      type: data.type,
-      subType: data.subType,
-      endDate: data.date,
-      place: data.place,
-      doctor: {
-        connect: {
-          id: doctorId,
-        },
-      },
-      patient: {
-        connect: {
-          id: patientId,
-        },
-      },
-    });
-  }
+  // async create(
+  //   data: CreateVisitDto,
+  //   doctorId: number,
+  //   patientId: number,
+  // ): Promise<Visit> {
+  //   console.log(data, doctorId, patientId);
+  //   return this.visitsRepository.create({
+  //     startDate: data.date,
+  //     type: data.type,
+  //     subType: data.subType,
+  //     endDate: data.date,
+  //     place: data.place,
+  //     doctor: {
+  //       connect: {
+  //         id: doctorId,
+  //       },
+  //     },
+  //     patient: {
+  //       connect: {
+  //         id: patientId,
+  //       },
+  //     },
+  //   });
+  // }
 }

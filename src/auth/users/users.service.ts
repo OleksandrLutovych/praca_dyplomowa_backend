@@ -1,13 +1,20 @@
 import { Prisma, User } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
+import { UserWithoutSensitiveFields } from './users.interface';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   async getUser(params: Prisma.UserWhereUniqueInput): Promise<User | null> {
-    return this.usersRepository.findOne(params);
+    return this.usersRepository.findOneForAuth(params);
+  }
+
+  async getData(userId: number): Promise<UserWithoutSensitiveFields | null> {
+    return this.usersRepository.findOne({
+      id: userId,
+    });
   }
 
   async users(params: {

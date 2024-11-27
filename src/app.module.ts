@@ -9,6 +9,10 @@ import { ConfigModule } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { DoctorProfileModule } from './personal-space/doctor/profile/doctor-profile.module';
 import { DoctorServicesModule } from './doctor-services/doctor-services.module';
+import { AuthGuard } from './auth/guards/auth-auth.guard';
+import { JwtStrategy } from './auth/strategy/jwt.strategy';
+import { JwtService } from '@nestjs/jwt';
+import { PatientProfileModule } from './personal-space/patient/profile/patient-profile.module';
 
 @Module({
   imports: [
@@ -18,6 +22,7 @@ import { DoctorServicesModule } from './doctor-services/doctor-services.module';
     DoctorsModule,
     PatientsModule,
     DoctorProfileModule,
+    PatientProfileModule,
     DoctorServicesModule,
     MailerModule.forRoot({
       transport: {
@@ -31,6 +36,14 @@ import { DoctorServicesModule } from './doctor-services/doctor-services.module';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: 'APP_GUARD',
+      useClass: AuthGuard,
+    },
+    JwtStrategy,
+    JwtService,
+  ],
 })
 export class AppModule {}

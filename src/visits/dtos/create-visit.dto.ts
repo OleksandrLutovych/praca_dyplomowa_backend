@@ -3,6 +3,9 @@ import { IsNotEmpty } from 'class-validator';
 
 export class CreateVisitDto {
   @IsNotEmpty()
+  serviceId: number;
+
+  @IsNotEmpty()
   date: Date;
 
   @IsNotEmpty()

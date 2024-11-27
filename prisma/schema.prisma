@@ -58,6 +58,7 @@ model DoctorService {
   service       String
   price         Float
   recomendation String?
+  Visit         Visit[]
 }
 
 model Patient {
@@ -73,17 +74,19 @@ model Patient {
 }
 
 model Visit {
-  id        Int          @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   startDate DateTime
   endDate   DateTime
-  doctor    Doctor       @relation(fields: [doctorId], references: [id])
+  doctor    Doctor        @relation(fields: [doctorId], references: [id])
   doctorId  Int
-  patient   Patient      @relation(fields: [patientId], references: [id])
+  patient   Patient       @relation(fields: [patientId], references: [id])
   patientId Int
+  service   DoctorService @relation(fields: [serviceId], references: [id])
+  serviceId Int
   place     String
   type      VisitType
   subType   VisitSubType
-  createdAt DateTime     @default(now())
+  createdAt DateTime      @default(now())
 }
 
 enum ContactType {

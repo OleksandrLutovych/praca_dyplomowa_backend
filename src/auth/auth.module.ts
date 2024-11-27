@@ -14,6 +14,8 @@ import { UsersRepository } from './users/users.repository';
 import { DoctorsRepository } from 'src/doctors/doctors.repository';
 import { DoctorsService } from 'src/doctors/doctors.service';
 import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
+import { VisitsRepository } from 'src/visits/visits.repository';
+import { PatientsRepository } from 'src/patients/patients.repository';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.rep
     DoctorsService,
     DoctorsRepository,
     DoctorServiceRepository,
+    VisitsRepository,
+    PatientsRepository,
     GoogleStrategy,
     JwtStrategy,
     RefreshStrategy,
