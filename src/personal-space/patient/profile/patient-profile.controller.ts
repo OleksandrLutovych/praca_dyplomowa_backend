@@ -1,9 +1,10 @@
 import { Controller, Get, Request, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Patient, Roles } from '@prisma/client';
-import { RolesCheck } from 'src/decorators/roles.decorator';
-import { PatientProfileService } from './patient-profile.service';
+import { Roles } from '@prisma/client';
 import { AuthGuard } from 'src/auth/guards/auth-auth.guard';
+import { RolesCheck } from 'src/decorators/roles.decorator';
+import { PatientProfileDataDto } from './dtos/patient-profile-data.dto';
+import { PatientProfileService } from './patient-profile.service';
 
 @Controller('api/patient-profile')
 @ApiTags('api/patient-profile')
@@ -14,7 +15,7 @@ export class PatientProfileController {
   @UseGuards(AuthGuard)
   @Get('')
   @ApiOkResponse()
-  getData(@Request() req): Promise<Patient> {
+  getData(@Request() req): Promise<PatientProfileDataDto | null> {
     const userId = req.user.sub;
 
     const response = this.patientProfileService.getData(userId);

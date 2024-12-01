@@ -22,6 +22,30 @@ export class PatientsRepository {
     });
   }
 
+  async getWithUser(
+    userId: number,
+  ): Promise<
+    | (Patient & {
+        user: { firstName: string; lastName: string; email: string };
+      })
+    | null
+  > {
+    return this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
   async getAll(params: {
     skip?: number;
     take?: number;

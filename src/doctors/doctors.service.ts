@@ -1,12 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Doctor, DoctorService, Prisma, Visit } from '@prisma/client';
-import { DoctorsRepository } from './doctors.repository';
+import {
+  eachDayOfInterval,
+  eachHourOfInterval,
+  endOfMonth,
+  isEqual,
+} from 'date-fns';
 import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
 import { PaginateOutput } from 'src/common/paginator';
 import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
+import { PatientsRepository } from 'src/patients/patients.repository';
 import { CreateVisitDto } from 'src/visits/dtos/create-visit.dto';
 import { VisitsRepository } from 'src/visits/visits.repository';
-import { PatientsRepository } from 'src/patients/patients.repository';
+import { DoctorsRepository } from './doctors.repository';
 
 @Injectable()
 export class DoctorsService {
@@ -39,9 +45,13 @@ export class DoctorsService {
     dto: CreateVisitDto,
     doctorId: number,
     userId: number,
-  ): Promise<Visit> {
+  ): Promise<
+    Visit & {
+      doctor: { user: { firstName: string; lastName: string } };
+      service: { service: string; price: number; recomendation: string };
+    }
+  > {
     const patient = await this.patientRepository.getByUserId(userId);
-    console.log(patient);
 
     const newVisit = await this.visitRepository.create({
       type: dto.type,
@@ -61,12 +71,39 @@ export class DoctorsService {
         },
       },
       place: dto.place,
-      startDate: dto.date,
-      endDate: dto.date,
+      date: dto.date,
       subType: dto.subType,
     });
 
     return newVisit;
+  }
+
+  async getAvailableTime(userId: number) {
+    const doctor = await this.doctorRepository.findOne({
+      id: userId,
+    });
+
+    console.log(doctor);
+    const dateInterval = eachDayOfInterval({
+      start: new Date(),
+      end: endOfMonth(new Date()),
+    });
+
+    const hourInterval = dateInterval.flatMap((day) =>
+      eachHourOfInterval({
+        start: new Date(day.setHours(9)),
+        end: new Date(day.setHours(16)),
+      }),
+    );
+
+    const visits = await this.visitRepository.findAllByDoctorId(doctor.id);
+    const bookedTimes = visits.map((visit) => new Date(visit.date));
+
+    const availableHours = hourInterval.filter(
+      (hour) => !bookedTimes.some((booked) => isEqual(hour, booked)),
+    );
+
+    return availableHours;
   }
 
   async create(data: Prisma.DoctorCreateInput): Promise<Doctor> {

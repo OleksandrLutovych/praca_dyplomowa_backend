@@ -44,6 +44,12 @@ export class DoctorsController {
     return this.doctorService.getServices(Number(id));
   }
 
+  @Get(':id/available-times')
+  @ApiOkResponse()
+  getAvailableTimes(@Param('id') id: string): Promise<any> {
+    return this.doctorService.getAvailableTime(Number(id));
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post(':id/visits')
   @ApiOkResponse()
@@ -51,7 +57,12 @@ export class DoctorsController {
     @Body() data: CreateVisitDto,
     @Param() params,
     @Request() req,
-  ): Promise<Visit> {
+  ): Promise<
+    Visit & {
+      doctor: { user: { firstName: string; lastName: string } };
+      service: { service: string; price: number; recomendation: string };
+    }
+  > {
     const { id } = params;
     const patientId = req.user.sub;
 

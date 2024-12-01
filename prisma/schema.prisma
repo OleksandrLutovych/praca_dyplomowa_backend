@@ -65,7 +65,7 @@ model Patient {
   id      Int      @id @default(autoincrement())
   user    User     @relation(fields: [userId], references: [id])
   userId  Int
-  age     Int
+  age     String
   pesel   String
   address String
   phone   String
@@ -75,8 +75,7 @@ model Patient {
 
 model Visit {
   id        Int           @id @default(autoincrement())
-  startDate DateTime
-  endDate   DateTime
+  date      DateTime
   doctor    Doctor        @relation(fields: [doctorId], references: [id])
   doctorId  Int
   patient   Patient       @relation(fields: [patientId], references: [id])

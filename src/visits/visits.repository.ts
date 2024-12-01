@@ -25,9 +25,60 @@ export class VisitsRepository {
     return paginateOutput<Visit>(visits, total, query);
   }
 
-  async create(data: Prisma.VisitCreateInput): Promise<Visit> {
+  async findAllByDoctorId(doctorId: number): Promise<Visit[]> {
+    return this.prisma.visit.findMany({
+      where: {
+        doctorId,
+      },
+    });
+  }
+
+  async findAllByDoctorIdWithService(
+    doctorId: number,
+  ): Promise<(Visit & { service: { service: string } })[]> {
+    return this.prisma.visit.findMany({
+      where: {
+        doctor: {
+          userId: doctorId,
+        },
+      },
+      include: {
+        service: {
+          select: {
+            service: true,
+          },
+        },
+      },
+    });
+  }
+
+  async create(data: Prisma.VisitCreateInput): Promise<
+    Visit & {
+      doctor: { user: { firstName: string; lastName: string } };
+      service: { service: string; price: number; recomendation: string };
+    }
+  > {
     return this.prisma.visit.create({
       data,
+      include: {
+        doctor: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        service: {
+          select: {
+            service: true,
+            price: true,
+            recomendation: true,
+          },
+        },
+      },
     });
   }
 

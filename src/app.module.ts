@@ -13,6 +13,7 @@ import { AuthGuard } from './auth/guards/auth-auth.guard';
 import { JwtStrategy } from './auth/strategy/jwt.strategy';
 import { JwtService } from '@nestjs/jwt';
 import { PatientProfileModule } from './personal-space/patient/profile/patient-profile.module';
+import { DoctorCalendarModule } from './personal-space/doctor/calendar/doctor-calendar.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PatientProfileModule } from './personal-space/patient/profile/patient-p
     DoctorProfileModule,
     PatientProfileModule,
     DoctorServicesModule,
+    DoctorCalendarModule,
     MailerModule.forRoot({
       transport: {
         host: process.env.EMAIL_HOST,

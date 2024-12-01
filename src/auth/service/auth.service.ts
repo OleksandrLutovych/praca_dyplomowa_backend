@@ -1,19 +1,22 @@
+import { MailerService } from '@nestjs-modules/mailer';
 import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { DoctorSignUpDto, LoginDto, SignUpDto } from '../requests';
 import * as bcrypt from 'bcrypt';
 import { DoctorsService } from '../../doctors/doctors.service';
-import { MailerService } from '@nestjs-modules/mailer';
+import { DoctorSignUpDto, LoginDto, SignUpDto } from '../requests';
 import { ResetPasswordRequestDto } from '../requests/reset-password-request.dto';
 import { ResetPasswordDto } from '../requests/reset-password.dto';
 import { TokenResponseDto } from '../response';
+import { UsersService } from '../users/users.service';
+import { PatientsService } from 'src/patients/patients.service';
+import { CreatePatientDto } from 'src/patients/dtos/create-patient.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly doctorsService: DoctorsService,
+    private readonly patientService: PatientsService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailerService,
   ) {}
@@ -43,7 +46,7 @@ export class AuthService {
     await this.mailService.sendMail({
       to: email,
       subject: 'Żeby zalogować się do aplikacji, aktywuj konto',
-      text: `Żeby zalogować się do aplikacji, aktywuj konto \n http://localhost:5173/activate-account/${user.id}`,
+      text: `Żeby zalogować się do aplikacji, aktywuj konto \n http://localhost:5173/activate-patient/${user.id}`,
     });
 
     return {
@@ -79,7 +82,7 @@ export class AuthService {
     await this.mailService.sendMail({
       to: email,
       subject: 'Aktywacja konta',
-      text: `Żeby zalogować się do aplikacji, aktywuj konto \n http://localhost:5173/activate-account/${user.id}`,
+      text: `Żeby zalogować się do aplikacji, aktywuj konto \n http://localhost:5173/activate-doctor/${user.id}`,
     });
 
     await this.doctorsService.create({
@@ -88,6 +91,31 @@ export class AuthService {
       },
       education,
       proffesion,
+    });
+
+    return {
+      status: HttpStatus.OK,
+    };
+  }
+
+  async astivatePatientAccount(
+    userId: string,
+    dto: CreatePatientDto,
+  ): Promise<{ status: HttpStatus }> {
+    const patient = await this.patientService.create({
+      ...dto,
+      user: {
+        connect: { id: Number(userId) },
+      },
+    });
+
+    if (!patient) {
+      throw new Error('Error');
+    }
+
+    await this.usersService.updateUser({
+      where: { id: Number(userId) },
+      data: { isVerified: true },
     });
 
     return {

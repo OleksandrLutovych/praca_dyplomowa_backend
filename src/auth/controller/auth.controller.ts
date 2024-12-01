@@ -17,6 +17,7 @@ import { TokenResponseDto } from '../response';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { CreatePatientDto } from 'src/patients/dtos/create-patient.dto';
 
 @Controller('api/auth')
 @ApiTags('api/auth')
@@ -39,9 +40,14 @@ export class AuthController {
     return this.authService.doctorSignUp(signUpDto);
   }
 
-  @Get('/activate-account/:id')
-  activateAccount(@Param('id') id: string) {
+  @Get('/activate-doctor/:id')
+  activateDoctor(@Param('id') id: string) {
     return this.authService.activateAccount(id);
+  }
+
+  @Post('/activate-patient/:id')
+  activatePatient(@Param('id') id: string, @Body() dto: CreatePatientDto) {
+    return this.authService.astivatePatientAccount(id, dto);
   }
 
   @Post('/reset-password')

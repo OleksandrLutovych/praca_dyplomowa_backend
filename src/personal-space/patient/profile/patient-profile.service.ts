@@ -1,33 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { Patient } from '@prisma/client';
 import { PatientsRepository } from 'src/patients/patients.repository';
+import { PatientProfileDataDto } from './dtos/patient-profile-data.dto';
 
 @Injectable()
 export class PatientProfileService {
   constructor(private readonly patientRepository: PatientsRepository) {}
 
-  async getData(userId: number): Promise<Patient | null> {
-    const patient = await this.patientRepository.getByUserId(userId);
-    console.log(patient);
-    return patient;
+  async getData(userId: number): Promise<PatientProfileDataDto | null> {
+    const patient = await this.patientRepository.getWithUser(userId);
+
+    const response: PatientProfileDataDto = {
+      personalData: {
+        name: patient.user.firstName,
+        lastName: patient.user.lastName,
+      },
+      contactData: {
+        email: patient.user.email,
+        phone: patient.phone,
+      },
+      age: patient.age,
+      address: patient.address,
+      pesel: patient.pesel,
+    };
+    return response;
   }
-
-  // async updateBaseData() {}
-
-  // async createService(doctorId: number, data: DoctorServiceCreateDto) {
-  //   await this.doctorServicesRepository.create({
-  //     doctor: {
-  //       connect: {
-  //         id: doctorId,
-  //       },
-  //     },
-  //     ...data,
-  //   });
-  // }
-
-  // async updateService() {}
-
-  // async deleteService() {}
-
-  // async archiveAccount() {}
 }
