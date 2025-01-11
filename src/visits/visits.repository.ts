@@ -52,6 +52,34 @@ export class VisitsRepository {
     });
   }
 
+  async findOneByDoctorIdAndId(doctorId: number, id: number) {
+    return this.prisma.visit.findFirst({
+      where: {
+        id,
+        doctorId,
+      },
+      include: {
+        patient: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        service: {
+          select: {
+            service: true,
+            price: true,
+            recomendation: true,
+          },
+        },
+      },
+    });
+  }
+
   async create(data: Prisma.VisitCreateInput): Promise<
     Visit & {
       doctor: { user: { firstName: string; lastName: string } };

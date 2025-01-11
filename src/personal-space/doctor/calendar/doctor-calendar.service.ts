@@ -15,6 +15,7 @@ export class DoctorCalendarService {
     }
 
     const events = visits.map((visit) => ({
+      id: visit.id,
       title: visit.service.service,
       start: visit.date,
       end: visit.date,

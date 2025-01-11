@@ -45,8 +45,13 @@ export class AuthService {
 
     await this.mailService.sendMail({
       to: email,
-      subject: 'Żeby zalogować się do aplikacji, aktywuj konto',
-      text: `Żeby zalogować się do aplikacji, aktywuj konto \n http://localhost:5173/activate-patient/${user.id}`,
+      subject: 'Aktywacja konta pacjenta',
+      html: `
+      <div class="container">
+        <h1>Dziękujemy za rejestracje!</h1>
+        <p>Żeby zalogować się do aplikacji, aktywuj konto linkiem poniżej.</p>
+        <a href="http://localhost:5173/activate-patient/${user.id}" class="activation-button">Aktywuj profil</a>
+    </div>`,
     });
 
     return {
@@ -81,8 +86,13 @@ export class AuthService {
 
     await this.mailService.sendMail({
       to: email,
-      subject: 'Aktywacja konta',
-      text: `Żeby zalogować się do aplikacji, aktywuj konto \n http://localhost:5173/activate-doctor/${user.id}`,
+      subject: 'Aktywacja konta lekarza',
+      html: `
+      <div class="container">
+        <h1>Dziękujemy za rejestracje!</h1>
+        <p>Żeby zalogować się do aplikacji, aktywuj konto linkiem poniżej.</p>
+        <a href="http://localhost:5173/activate-patient/${user.id}" class="activation-button">Aktywuj profil</a>
+    </div>`,
     });
 
     await this.doctorsService.create({

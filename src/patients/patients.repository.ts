@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Patient, Prisma } from '@prisma/client';
+import { Patient, Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma';
 
 @Injectable()
@@ -22,9 +22,20 @@ export class PatientsRepository {
     });
   }
 
-  async getWithUser(
+  async getByUserIdWithData(
     userId: number,
-  ): Promise<
+  ): Promise<(Patient & { user: User }) | null> {
+    return this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  async getWithUser(userId: number): Promise<
     | (Patient & {
         user: { firstName: string; lastName: string; email: string };
       })

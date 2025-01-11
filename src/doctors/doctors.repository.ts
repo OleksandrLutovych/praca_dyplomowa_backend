@@ -56,6 +56,11 @@ export class DoctorsRepository {
               lastName: true,
             },
           },
+          DoctorService: {
+            select: {
+              service: true,
+            },
+          },
         },
       }),
       await this.prisma.doctor.count(),

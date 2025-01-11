@@ -14,6 +14,8 @@ import { JwtStrategy } from './auth/strategy/jwt.strategy';
 import { JwtService } from '@nestjs/jwt';
 import { PatientProfileModule } from './personal-space/patient/profile/patient-profile.module';
 import { DoctorCalendarModule } from './personal-space/doctor/calendar/doctor-calendar.module';
+import { DoctorConsultsModule } from './personal-space/doctor/consults/doctor-consults.module';
+import { DoctorScheduleModule } from './personal-space/doctor/schedule/doctor-schedule.module';
 
 @Module({
   imports: [
@@ -22,10 +24,12 @@ import { DoctorCalendarModule } from './personal-space/doctor/calendar/doctor-ca
     UsersModule,
     DoctorsModule,
     PatientsModule,
+    DoctorScheduleModule,
     DoctorProfileModule,
     PatientProfileModule,
     DoctorServicesModule,
     DoctorCalendarModule,
+    DoctorConsultsModule,
     MailerModule.forRoot({
       transport: {
         host: process.env.EMAIL_HOST,

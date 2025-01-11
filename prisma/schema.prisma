@@ -31,16 +31,18 @@ model User {
 }
 
 model Doctor {
-  id            Int             @id @default(autoincrement())
-  user          User            @relation(fields: [userId], references: [id])
-  userId        Int
-  proffesion    String
-  education     String
-  about         String?
-  rating        Float?
-  patients      Patient[]
-  Visit         Visit[]
-  DoctorService DoctorService[]
+  id              Int               @id @default(autoincrement())
+  user            User              @relation(fields: [userId], references: [id])
+  userId          Int
+  proffesion      String
+  education       String
+  about           String?
+  rating          Float?
+  patients        Patient[]
+  Visit           Visit[]
+  DoctorService   DoctorService[]
+  DefaultSchedule DefaultSchedule[]
+  CustomSchedule  CustomSchedule[]
 }
 
 model Contact {
@@ -74,18 +76,43 @@ model Patient {
 }
 
 model Visit {
-  id        Int           @id @default(autoincrement())
-  date      DateTime
-  doctor    Doctor        @relation(fields: [doctorId], references: [id])
-  doctorId  Int
-  patient   Patient       @relation(fields: [patientId], references: [id])
-  patientId Int
-  service   DoctorService @relation(fields: [serviceId], references: [id])
-  serviceId Int
-  place     String
-  type      VisitType
-  subType   VisitSubType
-  createdAt DateTime      @default(now())
+  id         Int           @id @default(autoincrement())
+  date       DateTime
+  doctor     Doctor        @relation(fields: [doctorId], references: [id])
+  doctorId   Int
+  patient    Patient       @relation(fields: [patientId], references: [id])
+  patientId  Int
+  service    DoctorService @relation(fields: [serviceId], references: [id])
+  serviceId  Int
+  place      String
+  type       VisitType
+  subType    VisitSubType
+  createdAt  DateTime      @default(now())
+  finishedAt DateTime?
+}
+
+model DefaultSchedule {
+  id                Int      @id @default(autoincrement())
+  doctor            Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId          Int
+  dayOfWeek         Int
+  start             DateTime
+  end               DateTime
+  durationInMinutes Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CustomSchedule {
+  id                Int      @id @default(autoincrement())
+  doctor            Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId          Int
+  date              DateTime
+  start             DateTime
+  end               DateTime
+  durationInMinutes Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 enum ContactType {

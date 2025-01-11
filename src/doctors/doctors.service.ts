@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Doctor, DoctorService, Prisma, Visit } from '@prisma/client';
 import {
   eachDayOfInterval,
@@ -13,6 +13,7 @@ import { PatientsRepository } from 'src/patients/patients.repository';
 import { CreateVisitDto } from 'src/visits/dtos/create-visit.dto';
 import { VisitsRepository } from 'src/visits/visits.repository';
 import { DoctorsRepository } from './doctors.repository';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class DoctorsService {
@@ -21,6 +22,7 @@ export class DoctorsService {
     private readonly doctorServiceRepository: DoctorServiceRepository,
     private readonly visitRepository: VisitsRepository,
     private readonly patientRepository: PatientsRepository,
+    private readonly mailService: MailerService,
   ) {}
 
   async get(params: Prisma.DoctorWhereUniqueInput): Promise<Doctor | null> {
@@ -51,7 +53,17 @@ export class DoctorsService {
       service: { service: string; price: number; recomendation: string };
     }
   > {
-    const patient = await this.patientRepository.getByUserId(userId);
+    const patient = await this.patientRepository.getByUserIdWithData(userId);
+
+    if (!patient) {
+      throw new HttpException(
+        {
+          status: 404,
+          error: 'Pacjent nie istnieje. Skontaktuj się z administratorem.',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     const newVisit = await this.visitRepository.create({
       type: dto.type,
@@ -73,6 +85,26 @@ export class DoctorsService {
       place: dto.place,
       date: dto.date,
       subType: dto.subType,
+    });
+
+    await this.mailService.sendMail({
+      to: patient.user.email,
+      from: 'Aplikacja do rejestracji wizyt <',
+      subject: 'Rekomendacje dotyczace wizyty',
+      html: `
+      <h1>Witaj ${patient.user.firstName} ${patient.user.lastName}</h1>
+      <p>Twoja wizyta zostala zarejestrowana</p>
+      <p>Typ wizyty: ${newVisit.type}</p>
+      <p>Podtyp wizyty: ${newVisit.subType}</p>
+      <p>Data wizyty: ${newVisit.date}</p>
+      <p>Miejsce wizyty: ${newVisit.place}</p>
+      <p>Usługa: ${newVisit.service.service}</p>
+      <p>Cena: ${newVisit.service.price}</p>
+      <p>Rekomendacje dotyczace wizyty:</p>
+      <ul>
+        <li>${newVisit.service.recomendation}</li>
+      </ul>
+      `,
     });
 
     return newVisit;
