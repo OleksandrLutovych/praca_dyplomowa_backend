@@ -1,7 +1,5 @@
 export class CreateScheduleDto {
-  schedule: {
-    start: Date;
-    end: Date;
-  }[];
   durationInMinutes: number;
+  start: Date;
+  end: Date;
 }

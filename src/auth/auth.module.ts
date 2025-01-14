@@ -16,6 +16,7 @@ import { DoctorsService } from 'src/doctors/doctors.service';
 import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
 import { VisitsRepository } from 'src/visits/visits.repository';
 import { PatientsRepository } from 'src/patients/patients.repository';
+import { PrismaClient } from '@prisma/client';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { PatientsRepository } from 'src/patients/patients.repository';
     GoogleStrategy,
     JwtStrategy,
     RefreshStrategy,
+    PrismaClient,
   ],
   exports: [JwtStrategy, RefreshStrategy, PassportModule],
 })

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Roles } from '@prisma/client';
 import { AuthGuard } from 'src/auth/guards/auth-auth.guard';
@@ -14,6 +23,19 @@ export class DoctorScheduleController {
 
   @RolesCheck(Roles.DOCTOR)
   @UseGuards(AuthGuard)
+  @Get('')
+  @ApiOkResponse()
+  get(
+    @UserId() userId: number,
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ): Promise<any | null> {
+    const response = this.doctorScheduleService.get(userId, start, end);
+    return response;
+  }
+
+  @RolesCheck(Roles.DOCTOR)
+  @UseGuards(AuthGuard)
   @Post('')
   @ApiOkResponse()
   create(
@@ -26,10 +48,14 @@ export class DoctorScheduleController {
 
   @RolesCheck(Roles.DOCTOR)
   @UseGuards(AuthGuard)
-  @Get('')
+  @Patch(':id')
   @ApiOkResponse()
-  get(@UserId() userId: number): Promise<any | null> {
-    const response = this.doctorScheduleService.get(userId);
+  update(
+    @UserId() userId: number,
+    @Body() dto: CreateScheduleDto,
+    @Param('id') id: number,
+  ): Promise<any | null> {
+    const response = this.doctorScheduleService.update(dto, userId, Number(id));
     return response;
   }
 }

@@ -1,10 +1,22 @@
+import { MailerService } from '@nestjs-modules/mailer';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Doctor, DoctorService, Prisma, Visit } from '@prisma/client';
 import {
+  Doctor,
+  DoctorService,
+  Prisma,
+  PrismaClient,
+  Visit,
+} from '@prisma/client';
+import {
+  addHours,
+  addMinutes,
   eachDayOfInterval,
-  eachHourOfInterval,
   endOfMonth,
-  isEqual,
+  format,
+  getHours,
+  getMinutes,
+  isSameDay,
+  isSameMinute,
 } from 'date-fns';
 import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
 import { PaginateOutput } from 'src/common/paginator';
@@ -13,7 +25,7 @@ import { PatientsRepository } from 'src/patients/patients.repository';
 import { CreateVisitDto } from 'src/visits/dtos/create-visit.dto';
 import { VisitsRepository } from 'src/visits/visits.repository';
 import { DoctorsRepository } from './doctors.repository';
-import { MailerService } from '@nestjs-modules/mailer';
+import { DoctorAvailableTimeDto } from './dtos/doctor-available-time.dto';
 
 @Injectable()
 export class DoctorsService {
@@ -23,6 +35,7 @@ export class DoctorsService {
     private readonly visitRepository: VisitsRepository,
     private readonly patientRepository: PatientsRepository,
     private readonly mailService: MailerService,
+    private readonly prisma: PrismaClient,
   ) {}
 
   async get(params: Prisma.DoctorWhereUniqueInput): Promise<Doctor | null> {
@@ -83,7 +96,7 @@ export class DoctorsService {
         },
       },
       place: dto.place,
-      date: dto.date,
+      date: addHours(new Date(dto.date), 1),
       subType: dto.subType,
     });
 
@@ -115,27 +128,85 @@ export class DoctorsService {
       id: userId,
     });
 
-    console.log(doctor);
+    if (!doctor) {
+      throw new HttpException(
+        {
+          status: 404,
+          error: 'Lekarz nie istnieje. Skontaktuj się z administratorem.',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const doctorId = doctor.id;
+    const today = new Date();
+
     const dateInterval = eachDayOfInterval({
-      start: new Date(),
-      end: endOfMonth(new Date()),
+      start: today,
+      end: endOfMonth(today),
+    }).map((date) => addHours(date, 1));
+
+    const visits = await this.prisma.visit.findMany({
+      where: {
+        doctorId,
+        date: {
+          gte: dateInterval[0],
+          lte: dateInterval[dateInterval.length - 1],
+        },
+      },
     });
 
-    const hourInterval = dateInterval.flatMap((day) =>
-      eachHourOfInterval({
-        start: new Date(day.setHours(9)),
-        end: new Date(day.setHours(16)),
-      }),
-    );
+    const doctorSchedule = await this.prisma.defaultSchedule.findMany({
+      where: {
+        doctorId,
+      },
+    });
 
-    const visits = await this.visitRepository.findAllByDoctorId(doctor.id);
-    const bookedTimes = visits.map((visit) => new Date(visit.date));
+    const response: DoctorAvailableTimeDto[] = dateInterval.map((date) => {
+      const dayOfWeek = date.getDay();
 
-    const availableHours = hourInterval.filter(
-      (hour) => !bookedTimes.some((booked) => isEqual(hour, booked)),
-    );
+      const scheduleForDay = doctorSchedule.find(
+        (schedule) => schedule.dayOfWeek === dayOfWeek,
+      );
 
-    return availableHours;
+      if (!scheduleForDay) {
+        return {
+          date: date.toISOString(),
+          availableTimes: [],
+        };
+      }
+
+      const busyTimes = visits
+        .filter((visit) => visit.date.toDateString() === date.toDateString())
+        .map((visit) => visit.date.toISOString());
+
+      const availableTimes: string[] = [];
+      let currentTime = new Date(scheduleForDay.start);
+
+      while (currentTime < scheduleForDay.end) {
+        const x = addHours(date, getHours(currentTime));
+        const y = addMinutes(x, getMinutes(currentTime));
+
+        const isTimeBusy = busyTimes.some(
+          (busyTime) => isSameDay(busyTime, y) && isSameMinute(busyTime, y),
+        );
+
+        if (!isTimeBusy) {
+          availableTimes.push(format(currentTime, 'HH:mm'));
+        }
+
+        currentTime = new Date(
+          currentTime.getTime() + scheduleForDay.duration * 60000,
+        );
+      }
+
+      return {
+        date: date.toISOString(),
+        availableTimes,
+      };
+    });
+
+    return response;
   }
 
   async create(data: Prisma.DoctorCreateInput): Promise<Doctor> {

@@ -1,14 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { CreateScheduleDto } from './dtos/create-schedule.dto';
-import { getDay } from 'date-fns';
+import {
+  eachDayOfInterval,
+  endOfWeek,
+  getDay,
+  getHours,
+  setHours,
+  startOfWeek,
+} from 'date-fns';
 
 @Injectable()
 export class DoctorScheduleService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async create(data: CreateScheduleDto, userId: number) {
-    const { durationInMinutes, schedule } = data;
+    const { durationInMinutes, start, end } = data;
 
     const doctor = await this.prisma.doctor.findFirst({
       where: {
@@ -18,46 +25,21 @@ export class DoctorScheduleService {
 
     const doctorId = doctor.id;
 
-    const scheduleDb = await this.prisma.defaultSchedule.findMany({
-      where: { doctorId },
-    });
-
-    const existingSchedule = [];
-
-    if (scheduleDb.length >= schedule.length) {
-      throw new HttpException('Schedule already exists', HttpStatus.CONFLICT);
-    }
-
-    for (const { start, end } of schedule) {
-      console.log(start, end);
-      const dayOfweek = getDay(start);
-
-      if (scheduleDb.some((s) => s.dayOfWeek === dayOfweek)) {
-        existingSchedule.push({ start, end });
-        continue;
-      }
-
-      await this.createSchedule(doctorId, start, end, durationInMinutes);
-    }
-
-    const doctorSchedule = await this.prisma.defaultSchedule.findMany({
+    const existingEvent = await this.prisma.defaultSchedule.findFirst({
       where: {
         doctorId,
+        dayOfWeek: getDay(start),
       },
     });
 
-    console.log(existingSchedule);
+    if (existingEvent) {
+      throw new HttpException(
+        'Schedule already exists for this day',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-    return doctorSchedule;
-  }
-
-  async createSchedule(
-    doctorId: number,
-    start: Date,
-    end: Date,
-    durationInMinutes: number,
-  ) {
-    return await this.prisma.defaultSchedule.create({
+    await this.prisma.defaultSchedule.create({
       data: {
         doctorId,
         start,
@@ -66,9 +48,13 @@ export class DoctorScheduleService {
         dayOfWeek: getDay(start),
       },
     });
+
+    return null;
   }
 
-  async get(userId: number): Promise<any> {
+  async update(data: CreateScheduleDto, userId: number, id: number) {
+    const { durationInMinutes, start, end } = data;
+
     const doctor = await this.prisma.doctor.findFirst({
       where: {
         userId,
@@ -77,14 +63,84 @@ export class DoctorScheduleService {
 
     const doctorId = doctor.id;
 
+    await this.prisma.defaultSchedule.update({
+      where: {
+        id,
+      },
+      data: {
+        doctorId,
+        start,
+        end,
+        duration: durationInMinutes,
+        dayOfWeek: getDay(start),
+      },
+    });
+
+    return null;
+  }
+
+  async get(userId: number, start: string, end: string): Promise<any> {
+    const doctor = await this.prisma.doctor.findFirst({
+      where: {
+        userId,
+      },
+    });
+
+    const doctorId = doctor.id;
+    console.log(start, end);
     const doctorSchedule = await this.prisma.defaultSchedule.findMany({
       where: {
         doctorId,
       },
     });
 
-    console.log(doctorSchedule);
+    if (!start || !end) {
+      const days = eachDayOfInterval({
+        start: startOfWeek(new Date()),
+        end: endOfWeek(new Date()),
+      });
 
-    return doctorSchedule;
+      const result = days
+        .map((date) => {
+          const dayOfWeek = getDay(date);
+          const scheduleForDay = doctorSchedule.find(
+            (schedule) => schedule.dayOfWeek === dayOfWeek,
+          );
+
+          if (!scheduleForDay) {
+            return null;
+          }
+
+          return {
+            ...scheduleForDay,
+            start: setHours(date, getHours(scheduleForDay.start)),
+            end: setHours(date, getHours(scheduleForDay.end)),
+          };
+        })
+        .filter((x) => x !== null);
+
+      return result;
+    }
+    const days = eachDayOfInterval({ start, end });
+
+    const result = days
+      .map((date) => {
+        const dayOfWeek = getDay(date);
+        const scheduleForDay = doctorSchedule.find(
+          (schedule) => schedule.dayOfWeek === dayOfWeek,
+        );
+
+        if (!scheduleForDay) {
+          return null;
+        }
+
+        return {
+          ...scheduleForDay,
+          start: setHours(date, getHours(scheduleForDay.start)),
+          end: setHours(date, getHours(scheduleForDay.end)),
+        };
+      })
+      .filter((x) => x !== null);
+    return result;
   }
 }

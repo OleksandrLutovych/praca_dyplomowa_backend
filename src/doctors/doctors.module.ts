@@ -7,6 +7,7 @@ import { VisitsModule } from 'src/visits/visits.module';
 import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
 import { VisitsRepository } from 'src/visits/visits.repository';
 import { PatientsRepository } from 'src/patients/patients.repository';
+import { PrismaClient } from '@prisma/client';
 
 @Module({
   controllers: [DoctorsController],
@@ -17,6 +18,7 @@ import { PatientsRepository } from 'src/patients/patients.repository';
     DoctorServiceRepository,
     PatientsRepository,
     VisitsRepository,
+    PrismaClient,
   ],
   exports: [DoctorsService, DoctorsRepository],
 })
