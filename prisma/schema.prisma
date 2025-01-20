@@ -34,7 +34,7 @@ model Doctor {
   id              Int               @id @default(autoincrement())
   user            User              @relation(fields: [userId], references: [id])
   userId          Int
-  proffesion      String
+  proffesion      DoctorSpeciality
   education       String
   about           String?
   rating          Float?
@@ -92,15 +92,15 @@ model Visit {
 }
 
 model DefaultSchedule {
-  id                Int      @id @default(autoincrement())
-  doctor            Doctor   @relation(fields: [doctorId], references: [id])
-  doctorId          Int
-  dayOfWeek         Int
-  start             DateTime
-  end               DateTime
-  durationInMinutes Int
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId  Int
+  dayOfWeek Int
+  start     DateTime
+  end       DateTime
+  duration  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CustomSchedule {
@@ -135,4 +135,22 @@ enum VisitSubType {
   FIRST
   FOLLOW_UP
   CONTROL
+}
+
+enum DoctorSpeciality {
+  PRACTITIONER
+  CARDIOLOGIST
+  DERMATOLOGIST
+  GYNECOLOGIST
+  INTERNIST
+  NEUROLOGIST
+  OPHTHALMOLOGIST
+  ORTHOPEDIST
+  OTOLARYNGOLOGIS
+  PEDIATRICIAN
+  PSYCHIATRIST
+  PSYCHOLOGIST
+  UROLOGIST
+  SURGEON
+  DENTIST
 }

@@ -19,7 +19,7 @@ export interface PaginateOutput<T> {
 export const paginate = (
   query: QueryPaginationDto,
 ): { skip: number; take: number } => {
-  const size = Math.abs(parseInt(query.size)) || DEFAULT_PAGE_SIZE;
+  const size = Math.abs(parseInt(query.perPage)) || DEFAULT_PAGE_SIZE;
   const page = Math.abs(parseInt(query.page)) || DEFAULT_PAGE_NUMBER;
   return {
     skip: size * (page - 1),
@@ -35,7 +35,7 @@ export const paginateOutput = <T>(
   //   limit: number,
 ): PaginateOutput<T> => {
   const page = Math.abs(parseInt(query.page)) || DEFAULT_PAGE_NUMBER;
-  const size = Math.abs(parseInt(query.size)) || DEFAULT_PAGE_SIZE;
+  const size = Math.abs(parseInt(query.perPage)) || DEFAULT_PAGE_SIZE;
 
   const lastPage = Math.ceil(total / size);
 

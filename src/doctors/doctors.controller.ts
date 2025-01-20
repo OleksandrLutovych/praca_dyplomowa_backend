@@ -9,13 +9,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { DoctorsService } from './doctors.service';
+import { DoctorService, Visit } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { ListResponse } from 'src/common/dtos/list-response.dto';
 import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
-import { PaginateOutput } from 'src/common/paginator';
-import { Doctor, DoctorService, Visit } from '@prisma/client';
 import { CreateVisitDto } from 'src/visits/dtos/create-visit.dto';
 import { VisitsService } from 'src/visits/visits.service';
+import { DoctorsService } from './doctors.service';
+import { DoctorDto } from './dtos/doctor.dto';
 
 @Controller('api/doctors')
 @ApiTags('api/doctors')
@@ -27,7 +28,10 @@ export class DoctorsController {
 
   @Get('')
   @ApiOkResponse()
-  getMany(@Query() query: QueryPaginationDto): Promise<PaginateOutput<Doctor>> {
+  getMany(
+    @Query() query: QueryPaginationDto,
+  ): Promise<ListResponse<DoctorDto>> {
+    console.log(query);
     return this.doctorService.getMany(query);
   }
 

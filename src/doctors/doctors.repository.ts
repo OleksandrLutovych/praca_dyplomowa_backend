@@ -59,6 +59,7 @@ export class DoctorsRepository {
           DoctorService: {
             select: {
               service: true,
+              price: true,
             },
           },
         },

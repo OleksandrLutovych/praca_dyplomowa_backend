@@ -7,5 +7,11 @@ export class QueryPaginationDto {
 
   @IsOptional()
   @IsNumberString()
-  size?: string;
+  perPage?: string;
+
+  search?: string;
+
+  proffesion?: string;
+
+  date?: string;
 }

@@ -84,6 +84,8 @@ export class AuthService {
       },
     });
 
+    console.log(signUpDto);
+
     await this.mailService.sendMail({
       to: email,
       subject: 'Aktywacja konta lekarza',

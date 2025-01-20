@@ -3,6 +3,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import {
   Doctor,
   DoctorService,
+  DoctorSpeciality,
   Prisma,
   PrismaClient,
   Visit,
@@ -18,14 +19,15 @@ import {
   isSameDay,
   isSameMinute,
 } from 'date-fns';
+import { ListResponse } from 'src/common/dtos/list-response.dto';
 import { QueryPaginationDto } from 'src/common/dtos/query-pagination.dto';
-import { PaginateOutput } from 'src/common/paginator';
 import { DoctorServiceRepository } from 'src/doctor-services/doctor-services.repository';
 import { PatientsRepository } from 'src/patients/patients.repository';
 import { CreateVisitDto } from 'src/visits/dtos/create-visit.dto';
 import { VisitsRepository } from 'src/visits/visits.repository';
 import { DoctorsRepository } from './doctors.repository';
 import { DoctorAvailableTimeDto } from './dtos/doctor-available-time.dto';
+import { DoctorDto } from './dtos/doctor.dto';
 
 @Injectable()
 export class DoctorsService {
@@ -42,10 +44,66 @@ export class DoctorsService {
     return this.doctorRepository.findOne(params);
   }
 
-  async getMany(query?: QueryPaginationDto): Promise<PaginateOutput<Doctor>> {
-    const doctors = await this.doctorRepository.findMany(query);
+  async getMany(query: QueryPaginationDto): Promise<ListResponse<DoctorDto>> {
+    const { perPage, page, search, proffesion } = query;
+    const doctors = await this.prisma.doctor.findMany({
+      include: {
+        user: true,
+        DoctorService: true,
+        DefaultSchedule: true,
+      },
+      where: {
+        ...(search
+          ? {
+              OR: [
+                {
+                  user: {
+                    firstName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+                {
+                  user: {
+                    lastName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+        ...(proffesion
+          ? {
+              proffesion: {
+                equals: proffesion as DoctorSpeciality,
+              },
+            }
+          : {}),
+      },
+      skip: Number(page) || 0,
+      take: Number(perPage) || 10,
+    });
 
-    return doctors;
+    const totalRecords = await this.prisma.doctor.count();
+
+    const response: ListResponse<DoctorDto> = {
+      records: doctors.map((doctor) => ({
+        id: doctor.id,
+        user: {
+          firstName: doctor.user.firstName,
+          lastName: doctor.user.lastName,
+        },
+        proffesion: doctor.proffesion,
+        services: doctor.DoctorService,
+        rating: doctor.rating,
+      })),
+      totalRecords,
+    };
+
+    return response;
   }
 
   async getServices(doctorId: number): Promise<DoctorService[]> {

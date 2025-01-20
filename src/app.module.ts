@@ -16,6 +16,7 @@ import { PatientProfileModule } from './personal-space/patient/profile/patient-p
 import { DoctorCalendarModule } from './personal-space/doctor/calendar/doctor-calendar.module';
 import { DoctorConsultsModule } from './personal-space/doctor/consults/doctor-consults.module';
 import { DoctorScheduleModule } from './personal-space/doctor/schedule/doctor-schedule.module';
+import { PatientPersonalVisitsModule } from './personal-space/patient/visits/patient-personal-visits.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DoctorScheduleModule } from './personal-space/doctor/schedule/doctor-sc
     DoctorServicesModule,
     DoctorCalendarModule,
     DoctorConsultsModule,
+    PatientPersonalVisitsModule,
     MailerModule.forRoot({
       transport: {
         host: process.env.EMAIL_HOST,
