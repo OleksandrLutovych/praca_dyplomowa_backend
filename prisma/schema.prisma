@@ -76,19 +76,21 @@ model Patient {
 }
 
 model Visit {
-  id         Int           @id @default(autoincrement())
-  date       DateTime
-  doctor     Doctor        @relation(fields: [doctorId], references: [id])
-  doctorId   Int
-  patient    Patient       @relation(fields: [patientId], references: [id])
-  patientId  Int
-  service    DoctorService @relation(fields: [serviceId], references: [id])
-  serviceId  Int
-  place      String
-  type       VisitType
-  subType    VisitSubType
-  createdAt  DateTime      @default(now())
-  finishedAt DateTime?
+  id                   Int           @id @default(autoincrement())
+  date                 DateTime
+  doctor               Doctor        @relation(fields: [doctorId], references: [id])
+  doctorId             Int
+  patient              Patient       @relation(fields: [patientId], references: [id])
+  patientId            Int
+  service              DoctorService @relation(fields: [serviceId], references: [id])
+  serviceId            Int
+  place                String
+  type                 VisitType
+  subType              VisitSubType
+  status               VisitStatus
+  finishRecomendations String?
+  createdAt            DateTime      @default(now())
+  finishedAt           DateTime?
 }
 
 model DefaultSchedule {
@@ -153,4 +155,11 @@ enum DoctorSpeciality {
   UROLOGIST
   SURGEON
   DENTIST
+}
+
+enum VisitStatus {
+  CREATED
+  ACCEPTED
+  CANCELED
+  FINISHED
 }

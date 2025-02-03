@@ -87,7 +87,6 @@ export class DoctorScheduleService {
     });
 
     const doctorId = doctor.id;
-    console.log(start, end);
     const doctorSchedule = await this.prisma.defaultSchedule.findMany({
       where: {
         doctorId,

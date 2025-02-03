@@ -7,6 +7,7 @@ import {
   Prisma,
   PrismaClient,
   Visit,
+  VisitStatus,
 } from '@prisma/client';
 import {
   addHours,
@@ -45,11 +46,14 @@ export class DoctorsService {
   }
 
   async getMany(query: QueryPaginationDto): Promise<ListResponse<DoctorDto>> {
-    const { perPage, page, search, proffesion } = query;
+    const { perPage, page, search, proffesion, date } = query;
+
     const doctors = await this.prisma.doctor.findMany({
       include: {
         user: true,
-        DoctorService: true,
+        DoctorService: {
+          take: 2,
+        },
         DefaultSchedule: true,
       },
       where: {
@@ -87,23 +91,46 @@ export class DoctorsService {
       take: Number(perPage) || 10,
     });
 
-    const totalRecords = await this.prisma.doctor.count();
+    const selectedDate = date ? new Date(Number(date)) : null;
 
-    const response: ListResponse<DoctorDto> = {
-      records: doctors.map((doctor) => ({
-        id: doctor.id,
-        user: {
-          firstName: doctor.user.firstName,
-          lastName: doctor.user.lastName,
-        },
-        proffesion: doctor.proffesion,
-        services: doctor.DoctorService,
-        rating: doctor.rating,
-      })),
-      totalRecords,
+    const doctorsWithAvailability = await Promise.all(
+      doctors.map(async (doctor) => {
+        const isAvailable = doctor.DefaultSchedule.length > 0;
+
+        let closestAvailableDate: Date | null = null;
+
+        if (isAvailable && selectedDate) {
+          const availableTimes = await this.getAvailableTime(doctor.id);
+
+          const futureDates = availableTimes
+            .filter((slot) => new Date(slot.date) >= selectedDate)
+            .sort(
+              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+            );
+
+          closestAvailableDate =
+            futureDates.length > 0 ? new Date(futureDates[0].date) : null;
+        }
+
+        return {
+          id: doctor.id,
+          user: {
+            firstName: doctor.user.firstName,
+            lastName: doctor.user.lastName,
+          },
+          proffesion: doctor.proffesion,
+          services: doctor.DoctorService,
+          rating: doctor.rating,
+          isAvailable,
+          closestAvailableDate,
+        };
+      }),
+    );
+
+    return {
+      records: doctorsWithAvailability,
+      totalRecords: doctors.length,
     };
-
-    return response;
   }
 
   async getServices(doctorId: number): Promise<DoctorService[]> {
@@ -156,6 +183,7 @@ export class DoctorsService {
       place: dto.place,
       date: addHours(new Date(dto.date), 1),
       subType: dto.subType,
+      status: VisitStatus.CREATED,
     });
 
     await this.mailService.sendMail({

@@ -1,5 +1,10 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { DoctorsService } from '../../doctors/doctors.service';
@@ -10,6 +15,7 @@ import { TokenResponseDto } from '../response';
 import { UsersService } from '../users/users.service';
 import { PatientsService } from 'src/patients/patients.service';
 import { CreatePatientDto } from 'src/patients/dtos/create-patient.dto';
+import { CreateDoctorDto } from 'src/doctors/dtos/doctor-create.dto';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +33,10 @@ export class AuthService {
     const userExists = await this.usersService.getUser({ email });
 
     if (userExists) {
-      throw new UnauthorizedException('User already exists');
+      throw new HttpException(
+        { message: 'User already exists' },
+        HttpStatus.CONFLICT,
+      );
     }
 
     const saltOrRounds = 10;
@@ -62,8 +71,7 @@ export class AuthService {
   async doctorSignUp(
     signUpDto: DoctorSignUpDto,
   ): Promise<{ status: HttpStatus }> {
-    const { email, password, lastName, firstName, education, proffesion } =
-      signUpDto;
+    const { email, password, lastName, firstName } = signUpDto;
 
     const userExists = await this.usersService.getUser({ email });
 
@@ -84,8 +92,6 @@ export class AuthService {
       },
     });
 
-    console.log(signUpDto);
-
     await this.mailService.sendMail({
       to: email,
       subject: 'Aktywacja konta lekarza',
@@ -93,21 +99,23 @@ export class AuthService {
       <div class="container">
         <h1>Dziękujemy za rejestracje!</h1>
         <p>Żeby zalogować się do aplikacji, aktywuj konto linkiem poniżej.</p>
-        <a href="http://localhost:5173/activate-patient/${user.id}" class="activation-button">Aktywuj profil</a>
+        <a href="http://localhost:5173/activate-doctor/${user.id}" class="activation-button">Aktywuj profil</a>
     </div>`,
-    });
-
-    await this.doctorsService.create({
-      user: {
-        connect: { id: user.id },
-      },
-      education,
-      proffesion,
     });
 
     return {
       status: HttpStatus.OK,
     };
+  }
+
+  async getDoctorUser(userId: string): Promise<any> {
+    const user = await this.usersService.getUser({ id: Number(userId) });
+
+    if (user.isVerified) {
+      throw new HttpException('User is already verified', HttpStatus.CONFLICT);
+    }
+
+    return user;
   }
 
   async astivatePatientAccount(
@@ -122,6 +130,31 @@ export class AuthService {
     });
 
     if (!patient) {
+      throw new Error('Error');
+    }
+
+    await this.usersService.updateUser({
+      where: { id: Number(userId) },
+      data: { isVerified: true },
+    });
+
+    return {
+      status: HttpStatus.OK,
+    };
+  }
+
+  async activateDoctorAccount(
+    userId: string,
+    dto: CreateDoctorDto,
+  ): Promise<{ status: HttpStatus }> {
+    const doctor = await this.doctorsService.create({
+      ...dto,
+      user: {
+        connect: { id: Number(userId) },
+      },
+    });
+
+    if (!doctor) {
       throw new Error('Error');
     }
 
@@ -193,7 +226,10 @@ export class AuthService {
     }
 
     if (user.isVerified === false) {
-      throw new UnauthorizedException('User is not verified');
+      throw new HttpException(
+        'Konto użytkownika nie jest aktywowane',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const payload = { email: user.email, sub: user.id, roles: user.roles };

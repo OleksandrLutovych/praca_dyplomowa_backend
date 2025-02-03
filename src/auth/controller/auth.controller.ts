@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePatientDto } from 'src/patients/dtos/create-patient.dto';
+import { CreateDoctorDto } from 'src/doctors/dtos/doctor-create.dto';
 
 @Controller('api/auth')
 @ApiTags('api/auth')
@@ -40,9 +41,15 @@ export class AuthController {
     return this.authService.doctorSignUp(signUpDto);
   }
 
+  @Post('/activate-doctor/:id')
+  activateDoctor(@Param('id') id: string, @Body() dto: CreateDoctorDto) {
+    console.log(dto);
+    return this.authService.activateDoctorAccount(id, dto);
+  }
+
   @Get('/activate-doctor/:id')
-  activateDoctor(@Param('id') id: string) {
-    return this.authService.activateAccount(id);
+  getDoctorUser(@Param('id') id: string) {
+    return this.authService.getDoctorUser(id);
   }
 
   @Post('/activate-patient/:id')

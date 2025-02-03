@@ -1,4 +1,3 @@
-import { DoctorSpeciality } from '@prisma/client';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export class DoctorSignUpDto {
@@ -13,10 +12,4 @@ export class DoctorSignUpDto {
 
   @IsNotEmpty()
   lastName: string;
-
-  @IsNotEmpty()
-  proffesion: DoctorSpeciality;
-
-  @IsNotEmpty()
-  education: string;
 }

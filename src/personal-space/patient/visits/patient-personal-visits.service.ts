@@ -1,16 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, VisitStatus } from '@prisma/client';
+import { getHours, setHours } from 'date-fns';
 import { PatientPersonalVisitDto } from './dtos/patient-personal-visits.dto';
-import { plainToClass } from 'class-transformer';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class PatientPersonalVisitsService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly mailService: MailerService,
+  ) {}
 
   async getAll(userId: number): Promise<PatientPersonalVisitDto[] | null> {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+    });
     const visits = await this.prisma.visit.findMany({
       where: {
-        patientId: userId,
+        patientId: patient.id,
       },
       include: {
         doctor: {
@@ -24,26 +33,226 @@ export class PatientPersonalVisitsService {
             proffesion: true,
           },
         },
+        service: true,
       },
     });
 
     const response: PatientPersonalVisitDto[] = visits.map((visit) => {
-      return plainToClass(PatientPersonalVisitDto, visit);
       return {
         id: visit.id,
-        date: visit.date,
+        date: setHours(visit.date, getHours(visit.date) - 1),
         doctor: {
-          firstName: visit.doctor.user.firstName,
-          lastName: visit.doctor.user.lastName,
+          user: {
+            firstName: visit.doctor.user.firstName,
+            lastName: visit.doctor.user.lastName,
+          },
           proffesion: visit.doctor.proffesion,
         },
         place: visit.place,
         type: visit.type,
         subType: visit.subType,
         createdAt: visit.createdAt,
+        service: visit.service,
+        status: visit.status,
       };
     });
 
     return response;
+  }
+
+  async getById(
+    id: number,
+    userId: number,
+  ): Promise<PatientPersonalVisitDto | null> {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+    });
+    if (!patient) {
+      return null;
+    }
+
+    const visit = await this.prisma.visit.findFirst({
+      where: {
+        id,
+        patientId: patient.id,
+      },
+      include: {
+        doctor: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+            proffesion: true,
+          },
+        },
+        service: true,
+      },
+    });
+    const response: PatientPersonalVisitDto = {
+      id: visit.id,
+      date: setHours(visit.date, getHours(visit.date) - 1),
+      doctor: {
+        user: {
+          firstName: visit.doctor.user.firstName,
+          lastName: visit.doctor.user.lastName,
+        },
+        proffesion: visit.doctor.proffesion,
+      },
+      place: visit.place,
+      type: visit.type,
+      subType: visit.subType,
+      createdAt: visit.createdAt,
+      service: visit.service,
+      status: visit.status,
+    };
+
+    return response;
+  }
+  async aproveVisit(id: number, userId: number): Promise<boolean> {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!patient) {
+      return false;
+    }
+
+    const visit = await this.prisma.visit.findFirst({
+      where: {
+        id,
+        patientId: patient.id,
+      },
+      include: {
+        doctor: {
+          select: {
+            user: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!visit) {
+      return false;
+    }
+
+    await this.prisma.visit.update({
+      where: {
+        id,
+      },
+      data: {
+        status: VisitStatus.ACCEPTED,
+      },
+    });
+
+    await this.mailService.sendMail({
+      to: patient.user.email,
+      subject: 'Zmiana statusu wizyty',
+      html: `
+      <div class="container">
+        <h1>Uwaga, status wizyty nr. ${visit.id} został zmieniony!</h1>
+        <p>Również będziesz widział to w koncie osobistym w zakładce moje wizyty.</p>
+    </div>`,
+    });
+
+    await this.mailService.sendMail({
+      to: visit.doctor.user.email,
+      subject: 'Zmiana statusu wizyty',
+      html: `
+      <div class="container">
+        <h1>Uwaga, status wizyty nr. ${visit.id} został zmieniony!</h1>
+        <p>Również będziesz widział to w koncie osobistym w zakładce moje wizyty.</p>
+    </div>`,
+    });
+
+    return true;
+  }
+
+  async cancelVisit(id: number, userId: number): Promise<boolean> {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+    if (!patient) {
+      return false;
+    }
+
+    const visit = await this.prisma.visit.findFirst({
+      where: {
+        id,
+        patientId: patient.id,
+      },
+      include: {
+        doctor: {
+          select: {
+            user: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!visit) {
+      return false;
+    }
+
+    await this.prisma.visit.update({
+      where: {
+        id,
+      },
+      data: {
+        status: VisitStatus.CANCELED,
+      },
+    });
+
+    await this.mailService.sendMail({
+      to: patient.user.email,
+      subject: 'Zmiana statusu wizyty',
+      html: `
+      <div class="container">
+        <h1>Uwaga, status wizyty nr. ${visit.id} został zmieniony!</h1>
+        <p>Również będziesz widział to w koncie osobistym w zakładce moje wizyty.</p>
+    </div>`,
+    });
+
+    await this.mailService.sendMail({
+      to: visit.doctor.user.email,
+      subject: 'Zmiana statusu wizyty',
+      html: `
+      <div class="container">
+        <h1>Uwaga, status wizyty nr. ${visit.id} został zmieniony!</h1>
+        <p>Również będziesz widział to w koncie osobistym w zakładce moje wizyty.</p>
+    </div>`,
+    });
+
+    return true;
   }
 }

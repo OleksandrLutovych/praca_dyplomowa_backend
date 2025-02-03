@@ -9,4 +9,6 @@ export class DoctorDto {
   proffesion: string;
   services: DoctorService[];
   rating: number;
+  isAvailable: boolean;
+  closestAvailableDate: Date;
 }

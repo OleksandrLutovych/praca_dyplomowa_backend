@@ -1,4 +1,11 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { PatientPersonalVisitsService } from './patient-personal-visits.service';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { RolesCheck } from 'src/decorators/roles.decorator';
@@ -14,7 +21,41 @@ export class PatientPersonalVisitsController {
   @UseGuards(AuthGuard)
   @Get('')
   @ApiOkResponse()
-  getAll(userId) {
+  getAll(@Request() req) {
+    const userId = req.user.sub;
     return this.service.getAll(userId);
+  }
+
+  @RolesCheck(Roles.PATIENT)
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  @ApiOkResponse()
+  getById(@Request() req, @Param() params) {
+    const userId = Number(req.user.sub);
+    const id = Number(params.id);
+
+    return this.service.getById(id, userId);
+  }
+
+  @RolesCheck(Roles.PATIENT)
+  @UseGuards(AuthGuard)
+  @Post(':id/approve')
+  @ApiOkResponse()
+  approve(@Request() req, @Param() params) {
+    const userId = Number(req.user.sub);
+    const id = Number(params.id);
+
+    return this.service.aproveVisit(id, userId);
+  }
+
+  @RolesCheck(Roles.PATIENT)
+  @UseGuards(AuthGuard)
+  @Post(':id/cancel')
+  @ApiOkResponse()
+  cancel(@Request() req, @Param() params) {
+    const userId = Number(req.user.sub);
+    const id = Number(params.id);
+
+    return this.service.cancelVisit(id, userId);
   }
 }

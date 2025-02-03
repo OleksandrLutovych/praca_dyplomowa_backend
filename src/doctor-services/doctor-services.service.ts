@@ -22,6 +22,7 @@ export class DoctorServicesService {
   }
 
   async create(userId: number, data: DoctorServiceCreateDto): Promise<void> {
+    console.log(userId);
     const doctorId = (await this.doctorsRepository.findByUserId(userId)).id;
     this.doctorServicesRepository.create({
       doctor: {
