@@ -8,7 +8,8 @@ export class DoctorDto {
   };
   proffesion: string;
   services: DoctorService[];
-  rating: number;
+  ranking: number;
   isAvailable: boolean;
   closestAvailableDate: Date;
+  comments?: { author: string; message: string; date: Date }[];
 }

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaClient, VisitStatus } from '@prisma/client';
 import { getHours, setHours } from 'date-fns';
 import { PatientPersonalVisitDto } from './dtos/patient-personal-visits.dto';
 import { MailerService } from '@nestjs-modules/mailer';
+import { FeedbackVisit } from './dtos/feedback-visit.dto';
 
 @Injectable()
 export class PatientPersonalVisitsService {
@@ -54,6 +55,7 @@ export class PatientPersonalVisitsService {
         createdAt: visit.createdAt,
         service: visit.service,
         status: visit.status,
+        finishRecomendations: visit.finishRecomendations,
       };
     });
 
@@ -109,6 +111,7 @@ export class PatientPersonalVisitsService {
       createdAt: visit.createdAt,
       service: visit.service,
       status: visit.status,
+      finishRecomendations: visit.finishRecomendations,
     };
 
     return response;
@@ -254,5 +257,66 @@ export class PatientPersonalVisitsService {
     });
 
     return true;
+  }
+
+  async feedback(id: number, userId: number, dto: FeedbackVisit) {
+    const { comment, ranking } = dto;
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!patient) {
+      throw new HttpException(
+        'Wystąpił błąd z kontem pacjenta. Skontaktuj się z administratorem.',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const visit = await this.prisma.visit.findFirst({
+      where: {
+        id,
+        patientId: patient.id,
+      },
+      include: {
+        doctor: {
+          select: {
+            user: {
+              select: {
+                email: true,
+              },
+            },
+            rating: true,
+          },
+        },
+      },
+    });
+
+    if (!visit) {
+      throw new HttpException(
+        'Wystąpił błąd z wizytą. Skontaktuj się z administratorem.',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const response = await this.prisma.visit.update({
+      where: {
+        id,
+      },
+      data: {
+        comment,
+        ranking,
+      },
+    });
+
+    return response;
   }
 }

@@ -70,7 +70,6 @@ export class DoctorsController {
     const { id } = params;
     const patientId = req.user.sub;
 
-    console.log(id, patientId);
     return this.doctorService.createVisit(data, Number(id), Number(patientId));
   }
 }

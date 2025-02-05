@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -11,6 +12,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { RolesCheck } from 'src/decorators/roles.decorator';
 import { Roles } from '@prisma/client';
 import { AuthGuard } from 'src/auth/guards/auth-auth.guard';
+import { FeedbackVisit } from './dtos/feedback-visit.dto';
 
 @Controller('api/patient-personal-visits')
 @ApiTags('api/patient-personal-visits')
@@ -57,5 +59,16 @@ export class PatientPersonalVisitsController {
     const id = Number(params.id);
 
     return this.service.cancelVisit(id, userId);
+  }
+
+  @RolesCheck(Roles.PATIENT)
+  @UseGuards(AuthGuard)
+  @Post(':id/feedback')
+  @ApiOkResponse()
+  feedback(@Request() req, @Param() params, @Body() dto: FeedbackVisit) {
+    const userId = Number(req.user.sub);
+    const id = Number(params.id);
+
+    return this.service.feedback(id, userId, dto);
   }
 }

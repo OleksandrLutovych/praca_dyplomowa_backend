@@ -41,8 +41,86 @@ export class DoctorsService {
     private readonly prisma: PrismaClient,
   ) {}
 
-  async get(params: Prisma.DoctorWhereUniqueInput): Promise<Doctor | null> {
-    return this.doctorRepository.findOne(params);
+  async get(params: Prisma.DoctorWhereUniqueInput): Promise<DoctorDto | null> {
+    const doctor = await this.prisma.doctor.findUnique({
+      where: {
+        id: params.id,
+      },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        DoctorService: true,
+      },
+    });
+
+    const visits = await this.prisma.visit.findMany({
+      where: {
+        doctorId: doctor.id,
+        ranking: {
+          not: null,
+        },
+        comment: {
+          not: null,
+        },
+      },
+      include: {
+        patient: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const feedbackData = visits.reduce(
+      (acc, visit) => {
+        const { comment, ranking, patient, finishedAt } = visit;
+        const { user } = patient;
+        acc.ranking += ranking;
+
+        const commentObj = {
+          author: `${user.firstName} ${user.lastName}`,
+          message: comment,
+          date: finishedAt,
+        };
+
+        acc.comments.push(commentObj);
+
+        return acc;
+      },
+      { ranking: 0, comments: [] } as {
+        ranking: number;
+        comments: { author: string; message: string; date: Date }[];
+      },
+    );
+
+    const averageRanking =
+      visits.length > 0 ? Math.round(feedbackData.ranking / visits.length) : 0;
+
+    const { comments } = feedbackData;
+
+    return {
+      id: doctor.id,
+      user: {
+        firstName: doctor.user.firstName,
+        lastName: doctor.user.lastName,
+      },
+      proffesion: doctor.proffesion,
+      services: doctor.DoctorService,
+      ranking: averageRanking,
+      comments,
+      closestAvailableDate: null,
+      isAvailable: null,
+    };
   }
 
   async getMany(query: QueryPaginationDto): Promise<ListResponse<DoctorDto>> {
@@ -95,6 +173,23 @@ export class DoctorsService {
 
     const doctorsWithAvailability = await Promise.all(
       doctors.map(async (doctor) => {
+        const visits = await this.prisma.visit.findMany({
+          where: {
+            doctorId: doctor.id,
+            ranking: {
+              not: null,
+            },
+          },
+        });
+
+        const ranking = visits.reduce((acc, visit) => {
+          const grade = visit.ranking;
+          return acc + grade;
+        }, 0);
+
+        const averageRanking =
+          visits.length > 0 ? Math.round(ranking / visits.length) : 0;
+
         const isAvailable = doctor.DefaultSchedule.length > 0;
 
         let closestAvailableDate: Date | null = null;
@@ -120,7 +215,7 @@ export class DoctorsService {
           },
           proffesion: doctor.proffesion,
           services: doctor.DoctorService,
-          rating: doctor.rating,
+          ranking: averageRanking,
           isAvailable,
           closestAvailableDate,
         };

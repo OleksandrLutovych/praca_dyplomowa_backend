@@ -21,4 +21,5 @@ export class PatientPersonalVisitDto {
   createdAt: Date;
   service: DoctorService;
   status: VisitStatus;
+  finishRecomendations: string;
 }

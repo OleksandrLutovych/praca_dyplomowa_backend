@@ -19,6 +19,7 @@ export class DoctorCalendarService {
       title: visit.service.service,
       start: visit.date,
       end: visit.date,
+      status: visit.status,
     }));
 
     return {

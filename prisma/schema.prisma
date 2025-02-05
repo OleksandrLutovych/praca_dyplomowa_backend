@@ -89,8 +89,11 @@ model Visit {
   subType              VisitSubType
   status               VisitStatus
   finishRecomendations String?
+  ranking              Int?
+  comment              String?
   createdAt            DateTime      @default(now())
   finishedAt           DateTime?
+  rejectReason         String?
 }
 
 model DefaultSchedule {
